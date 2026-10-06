@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2025",
+    "module": "commonjs",
+    "strict": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "index.ts", "app.ts", "server.ts"],
+  "exclude": ["node_modules", "dist"]
+}
