@@ -10,7 +10,7 @@ export const registerUserService = async (userData: NewUser): Promise<User> => {
     return await createUser({ ...userData, password: passwordHash });
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "23505") {
-      throw appError("Invalid credentials", 409);
+      throw appError("Email already in use", 409);
     }
     throw error;
   }
