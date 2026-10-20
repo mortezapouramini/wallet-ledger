@@ -4,5 +4,9 @@ import { createUser } from "./user.repository";
 
 export const registerUserService = async (userData: NewUser): Promise<User> => {
   const passwordHash = await argon2.hash(userData.password);
-  return await createUser({ ...userData, password: passwordHash });
+  return await createUser({
+    name: userData.name,
+    email: userData.email,
+    passwordHash,
+  });
 };

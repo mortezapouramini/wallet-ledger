@@ -1,13 +1,13 @@
 import { DatabaseError } from "pg";
 import { databasePool } from "../../configs/database.config";
-import { NewUser, User } from "./types";
+import { NewUserRecord, User } from "./types";
 import { appError } from "../../middlewares/errorHandler.middleware";
 
-export const createUser = async (userData: NewUser): Promise<User> => {
+export const createUser = async (userData: NewUserRecord): Promise<User> => {
   try {
     const result = await databasePool.query<User>(
       `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email`,
-      [userData.name, userData.email, userData.password],
+      [userData.name, userData.email, userData.passwordHash],
     );
     return result.rows[0];
   } catch (error) {
