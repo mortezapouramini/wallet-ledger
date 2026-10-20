@@ -1,12 +1,25 @@
+import { DatabaseError } from "pg";
 import { databasePool } from "../../configs/database.config";
 import { NewUser, User } from "./types";
+import { appError } from "../../middlewares/errorHandler.middleware";
 
 export const createUser = async (userData: NewUser): Promise<User> => {
-  const result = await databasePool.query(
-    `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email`,
-    [userData.name, userData.email, userData.password],
-  );
-  return result.rows[0];
+  try {
+    const result = await databasePool.query<User>(
+      `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email`,
+      [userData.name, userData.email, userData.password],
+    );
+    return result.rows[0];
+  } catch (error) {
+    if (
+      error instanceof DatabaseError &&
+      error.code === "23505" &&
+      error.constraint === "users_email_key"
+    ) {
+      throw appError("Email already in use", 409);
+    }
+    throw error;
+  }
 };
 
 export const findUserByEmail = async (email: string): Promise<User | null> => {
