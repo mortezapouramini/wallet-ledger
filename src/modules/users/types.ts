@@ -1,8 +1,7 @@
-export interface NewUser {
-  name: string;
-  email: string;
-  password: string;
-}
+import z from "zod";
+import { registerUserSchema } from "./user.schema";
+
+export type NewUser = z.infer<typeof registerUserSchema>;
 
 export interface NewUserRecord {
   name: string;

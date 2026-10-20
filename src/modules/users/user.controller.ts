@@ -8,7 +8,6 @@ export const registerUser = async (
   req: Request<{}, {}, NewUser>,
   res: Response<SuccessResponse<User>>,
 ) => {
-  // Validate the request body
   const newUser = await registerUserService(req.body);
   sendSuccess(res, newUser, 201);
 };
