@@ -7,3 +7,8 @@ export interface ErrorResponse {
   success: false;
   body: ErrorBody;
 }
+
+export interface SuccessResponse<T> {
+  success: true;
+  data: T;
+}
