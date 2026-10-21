@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { NewUser, User } from "./types";
 import { registerUserService } from "./user.service";
-import { NewUser, User } from "./types";
 import { SuccessResponse } from "../../types/index";
 import { sendSuccess } from "../../shared/respond.shared";
 
