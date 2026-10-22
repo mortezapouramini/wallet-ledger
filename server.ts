@@ -1,6 +1,10 @@
 import dotenv from "dotenv"
 dotenv.config({ path: ".env" });
 import { app } from "./app";
+import {connectRedis} from './src/configs/redis.config'
+
+connectRedis()
+
 
 const port = process.env.SERVER_PORT;
 app.listen(port, () => {

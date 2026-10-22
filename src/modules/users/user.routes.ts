@@ -6,3 +6,4 @@ import { registerUserSchema } from "./user.schema";
 export const userRoutes: Router = express.Router();
 
 userRoutes.post("/register",validateBody(registerUserSchema) , registerUser);
+userRoutes.post("/verify-email", registerUser);
