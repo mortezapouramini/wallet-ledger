@@ -15,5 +15,13 @@ export interface User {
   email: string;
 }
 
+export interface CatchPendingUserData{
+  name: string;
+  email: string;
+  passwordHash: string;
+  verifyCode: number;
+  attempts: string;
+}
 
-export type VerifyCode = number
+export type VerifyCode = number;
+export type PendingUUID = string;
