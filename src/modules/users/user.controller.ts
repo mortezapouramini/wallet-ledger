@@ -1,22 +1,14 @@
-import type { CookieOptions, Request, Response } from "express";
-import type { NewUser, User, VerifyCode } from "./types";
+import type { Request, Response } from "express";
+import type { RegisterInput, User, VerifyEmailInput } from "./types";
 import { registerUserService, verifyEmailService } from "./user.service";
 import { SuccessResponse } from "../../types/index";
 import { sendSuccess } from "../../shared/respond.shared";
 
 export const registerUser = async (
-  req: Request<{}, {}, NewUser>,
+  req: Request<{}, {}, RegisterInput>,
   res: Response<SuccessResponse<string>>,
 ) => {
-  const pendingUserUUID = await registerUserService(req.body);
-  const cookieOptions: CookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-    maxAge: 5 * 60 * 1000,
-    path: "/api/v1/users/verify-email",
-  };
-  res.cookie("pendingUserUUID", pendingUserUUID, cookieOptions);
+  await registerUserService(req.body);
   sendSuccess(
     res,
     `We have sent a verification code to ${req.body.email}`,
@@ -25,11 +17,9 @@ export const registerUser = async (
 };
 
 export const verifyEmail = async (
-  req: Request<{}, {}, Record<string, VerifyCode>>,
+  req: Request<{}, {}, VerifyEmailInput>,
   res: Response<SuccessResponse<User>>,
 ) => {
-  const { verifyCode } = req.body;
-  const { pendingUserUUID } = req.cookies;
-  const newUser = await verifyEmailService(verifyCode, pendingUserUUID);
+  const newUser = await verifyEmailService(req.body);
   sendSuccess(res, newUser, 201);
 };

@@ -1,7 +1,6 @@
 import z from "zod";
-import { pendingUserSchema, registerUserSchema } from "./user.schema";
+import { pendingUserSchema, registerUserSchema, verifyEmailSchema } from "./user.schema";
 
-export type NewUser = z.infer<typeof registerUserSchema>;
 
 export interface NewUserRecord {
   name: string;
@@ -14,10 +13,7 @@ export interface User {
   name: string;
   email: string;
 }
-
-
-
+export type RegisterInput = z.infer<typeof registerUserSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type PendingUserRecord = z.infer<typeof pendingUserSchema>;
 
-export type VerifyCode = number;
-export type PendingUUID = string;

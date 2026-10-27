@@ -1,9 +1,8 @@
 import type {
-  NewUser,
   PendingUserRecord,
-  PendingUUID,
+  RegisterInput,
   User,
-  VerifyCode,
+  VerifyEmailInput,
 } from "./types";
 import argon2 from "argon2";
 import { createAccount, createUser, findUserByEmail } from "./user.repository";
@@ -12,69 +11,77 @@ import { appError } from "../../middlewares/errorHandler.middleware";
 import { redis } from "../../configs/redis.config";
 import crypto from "crypto";
 import { sendMail } from "../../configs/mail.config";
-import { number } from "zod";
 import { pendingUserSchema } from "./user.schema";
 
+const PENDING_TTL_SECONDS = 15 * 60;
+const SEND_LIMIT_WINDOW_SECONDS = 60 * 60;
+const MAX_SENDS_PER_WINDOW = 5;
+
+const hashToken = (token: string) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+const pendingKey = (token: string) => `pending:token:${hashToken(token)}`;
+const sendCountKey = (email: string) => `pending:sends:${email}`;
+
 export const registerUserService = async (
-  userData: NewUser,
-): Promise<PendingUUID> => {
+  userData: RegisterInput,
+): Promise<void> => {
   const user = await findUserByEmail(userData.email);
   if (user) {
     throw appError("Email is already exists", 400);
   }
-  const existUUID = await redis.get(`pending:email:${userData.email}`);
-  if (existUUID) {
-    return existUUID;
+  const [, sends] = await redis
+    .multi()
+    .set(sendCountKey(userData.email), "0", {
+      condition: "NX",
+      expiration: { type: "EX", value: SEND_LIMIT_WINDOW_SECONDS },
+    })
+    .incr(sendCountKey(userData.email))
+    .exec();
+  if (Number(sends) > MAX_SENDS_PER_WINDOW) {
+    throw appError(
+      "Too many verification emails requested. Try again later",
+      429,
+    );
   }
 
-  const passwordHash = await argon2.hash(userData.password);
-  const pendingUserUUID = crypto.randomUUID();
-  const verifyCode = crypto.randomInt(90000) + 10000;
-
-  const catchUserData: PendingUserRecord = {
+  const token = crypto.randomBytes(32).toString("base64url");
+  const record: PendingUserRecord = {
     name: userData.name,
     email: userData.email,
-    passwordHash,
-    verifyCode: String(verifyCode),
-    attempts: "0",
   };
+  const key = pendingKey(token);
+  await redis.multi().hSet(key, record).expire(key, PENDING_TTL_SECONDS).exec();
 
-  await redis.hSet(`pending:${pendingUserUUID}`, catchUserData);
-  await redis.expire(`pending:${pendingUserUUID}`, 5 * 60);
-  await redis.set(`pending:email:${userData.email}`, pendingUserUUID, {
-    expiration: { type: "EX", value: 5 * 60 },
-  });
-
-  await sendMail(userData.email, "Verify code", String(verifyCode));
-
-  return pendingUserUUID;
+  const link = `${process.env.APP_URL}/verify-email?token=${token}`;
+  try {
+    await sendMail(
+      userData.email,
+      "Verify your email",
+      `Open this link to verify your email and choose a password:\n${link}\n\nIf you did not request this, ignore this email.`,
+    );
+  } catch (error) {
+    await redis.del(pendingKey(token));
+    throw error;
+  }
 };
 
 export const verifyEmailService = async (
-  verifyCode: VerifyCode,
-  pendingUserUUID: PendingUUID,
+  input: VerifyEmailInput,
 ): Promise<User> => {
-  const parsed = pendingUserSchema.safeParse(
-    await redis.hGetAll(`pending:${pendingUserUUID}`),
-  );
-  if (!parsed.success) throw appError("Registration expired", 410);
-  const pendingUser = parsed.data;
-
-  if (Number(verifyCode) !== Number(pendingUser.verifyCode)) {
-    await redis.hIncrBy(`pending:${pendingUserUUID}`, "attempts", 1);
-    if (Number(pendingUser.attempts) > 3) {
-      await redis.del(`pending:${pendingUserUUID}`);
-      await redis.del(`pending:email:${pendingUser.email}`);
-      throw appError("Too many requests", 429);
-    }
-    throw appError("Invalid verification code", 400);
+  const key = pendingKey(input.token);
+  const [data] = await redis.multi().hGetAll(key).del(key).exec();
+  const parsed = pendingUserSchema.safeParse(data);
+  if (!parsed.success) {
+    throw appError("Invalid or expired link", 400);
   }
+  const pendingUser = parsed.data;
+  const passwordHash = await argon2.hash(input.password);
 
   return withTransaction(async (client) => {
     const user = await createUser(client, {
       name: pendingUser.name,
       email: pendingUser.email,
-      passwordHash: pendingUser.passwordHash,
+      passwordHash,
     });
     await createAccount(client, user.id);
     return user;
