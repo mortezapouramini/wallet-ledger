@@ -4,7 +4,9 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "start": "npx tsc && node dist/server.js",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev:worker": "node dist/worker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "argon2": "^0.45.1",
+    "bullmq": "^6.5.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

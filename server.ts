@@ -1,5 +1,4 @@
-import dotenv from "dotenv"
-dotenv.config({ path: ".env" });
+import 'dotenv/config'
 import { app } from "./app";
 import {connectRedis} from './src/configs/redis.config'
 

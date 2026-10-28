@@ -10,8 +10,9 @@ import { withTransaction } from "../../configs/database.config";
 import { appError } from "../../middlewares/errorHandler.middleware";
 import { redis } from "../../configs/redis.config";
 import crypto from "crypto";
-import { sendMail } from "../../configs/mail.config";
 import { pendingUserSchema } from "./user.schema";
+import { emailQueue } from "../../queues/email.queue";
+
 
 const PENDING_TTL_SECONDS = 15 * 60;
 const SEND_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -53,16 +54,8 @@ export const registerUserService = async (
   await redis.multi().hSet(key, record).expire(key, PENDING_TTL_SECONDS).exec();
 
   const link = `${process.env.APP_URL}/verify-email?token=${token}`;
-  try {
-    await sendMail(
-      userData.email,
-      "Verify your email",
-      `Open this link to verify your email and choose a password:\n${link}\n\nIf you did not request this, ignore this email.`,
-    );
-  } catch (error) {
-    await redis.del(pendingKey(token));
-    throw error;
-  }
+
+  await emailQueue.add("verify-email", { email: userData.email, link });
 };
 
 export const verifyEmailService = async (
