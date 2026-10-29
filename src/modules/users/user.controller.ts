@@ -11,7 +11,7 @@ export const registerUser = async (
   await registerUserService(req.body);
   sendSuccess(
     res,
-    `We have sent a verification code to ${req.body.email}`,
+    `We have sent a verify link to ${req.body.email} `,
     200,
   );
 };

@@ -9,9 +9,8 @@ export const emailQueue = new Queue<VerifyEmailJobData, void, "verify-email">(
     defaultJobOptions: {
       attempts: 5,
       backoff: { type: "exponential", delay: 1000 },
-      delay: 2000,
-      removeOnComplete: 1000,
-      removeOnFail: 1000,
+      removeOnComplete: true,
+      removeOnFail: {age : 15 * 60},
     },
   },
 );

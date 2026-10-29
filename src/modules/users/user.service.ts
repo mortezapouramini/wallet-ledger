@@ -28,7 +28,7 @@ export const registerUserService = async (
 ): Promise<void> => {
   const user = await findUserByEmail(userData.email);
   if (user) {
-    throw appError("Email is already exists", 400);
+    throw appError("Email already exists", 409);
   }
   const [, sends] = await redis
     .multi()
@@ -55,7 +55,12 @@ export const registerUserService = async (
 
   const link = `${process.env.APP_URL}/verify-email?token=${token}`;
 
-  await emailQueue.add("verify-email", { email: userData.email, link });
+  try {
+    await emailQueue.add("verify-email", { email: userData.email, link });
+  } catch (error) {
+    await redis.del(key)
+    throw error
+  }
 };
 
 export const verifyEmailService = async (

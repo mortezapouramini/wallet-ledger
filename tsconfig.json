@@ -8,6 +8,6 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "app.ts", "app.ts", "server.ts" , "worker.ts"],
+  "include": ["src/**/*", "app.ts", "server.ts" , "worker.ts"],
   "exclude": ["node_modules", "dist"]
 }
