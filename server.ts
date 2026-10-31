@@ -40,9 +40,9 @@ const main = async () => {
         process.exit(error ? 1 : 0);
       }
     });
-    process.on("SIGINT", () => shutDown("SIGING"));
-    process.on("SIGTERM", () => shutDown("SIGTERM"));
   };
+  process.on("SIGINT", () => shutDown("SIGINT"));
+  process.on("SIGTERM", () => shutDown("SIGTERM"));
 };
 
 main().catch((err) => {

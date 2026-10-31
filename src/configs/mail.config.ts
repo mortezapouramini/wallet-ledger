@@ -12,8 +12,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendMail = async (to: string, subject: string, text: string) => {
   return transporter.sendMail({
-    from: "Walet ledger",
-    sender: "Walet ledger",
+    from: process.env.MAIL_FROM,
     to,
     subject,
     text,

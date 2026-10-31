@@ -68,7 +68,7 @@ export const errorHandler = (
         message: bodyParserMessages[error.type],
       },
     };
-    res.status(error.status).json(response);
+    return res.status(error.status).json(response);
   }
 
   if (error instanceof AppError) {
