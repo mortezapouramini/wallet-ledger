@@ -1,7 +1,10 @@
 import type {
+  AccessToken,
+  LoginInput,
   PendingUserRecord,
   RegisterInput,
   User,
+  UserWithToken,
   VerifyEmailInput,
 } from "./types";
 import argon2 from "argon2";
@@ -12,7 +15,7 @@ import { redis } from "../../configs/redis.config";
 import crypto from "crypto";
 import { pendingUserSchema } from "./user.schema";
 import { emailQueue } from "../../queues/email.queue";
-
+import { signAccessToken } from "../../shared/auth.shared";
 
 const PENDING_TTL_SECONDS = 15 * 60;
 const SEND_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -58,8 +61,8 @@ export const registerUserService = async (
   try {
     await emailQueue.add("verify-email", { email: userData.email, link });
   } catch (error) {
-    await redis.del(key)
-    throw error
+    await redis.del(key);
+    throw error;
   }
 };
 
@@ -84,4 +87,20 @@ export const verifyEmailService = async (
     await createAccount(client, user.id);
     return user;
   });
+};
+
+export const loginUserService = async (
+  userData: LoginInput,
+): Promise<UserWithToken> => {
+  const user = await findUserByEmail(userData.email);
+  if (!user) throw appError("User not found", 404);
+
+  const isValidPassword = await argon2.verify(
+    user.passwordHash as string,
+    userData.password,
+  );
+  if (!isValidPassword) throw appError("Invalid password", 400);
+  delete user.passwordHash;
+  const accessToken = signAccessToken({ id: user.id, email: user.email });
+  return { user, accessToken };
 };

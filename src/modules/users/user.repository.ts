@@ -38,7 +38,7 @@ export const createAccount = async (
 
 export const findUserByEmail = async (email: string): Promise<User | null> => {
   const result = await databasePool.query<User>(
-    `SELECT id, name, email FROM users WHERE email = $1`,
+    `SELECT id, name, email, password_hash AS "passwordHash" FROM users WHERE email = $1`,
     [email],
   );
   return result.rows[0] || null;
