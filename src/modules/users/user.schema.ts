@@ -17,5 +17,5 @@ export const pendingUserSchema = z.object({
 
 export const loginUserSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
-  password: z.string().min(8).max(128),
+  password: z.string().min(1).max(128),
 });

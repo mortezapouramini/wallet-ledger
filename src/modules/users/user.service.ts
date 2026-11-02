@@ -89,17 +89,22 @@ export const verifyEmailService = async (
   });
 };
 
+const dummyHash = argon2.hash(crypto.randomBytes(16).toString("hex"));
+
 export const loginUserService = async (
   userData: LoginInput,
 ): Promise<UserWithToken> => {
   const user = await findUserByEmail(userData.email);
-  if (!user) throw appError("User not found", 404);
+  if (!user) {
+    await argon2.verify(await dummyHash, userData.password); // Prevent timing attacks
+    throw appError("Invalid email or password", 401);
+  }
 
   const isValidPassword = await argon2.verify(
     user.passwordHash as string,
     userData.password,
   );
-  if (!isValidPassword) throw appError("Invalid password", 400);
+  if (!isValidPassword) throw appError("Invalid email or password", 401);
   delete user.passwordHash;
   const accessToken = signAccessToken({ id: user.id, email: user.email });
   return { user, accessToken };
