@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import type { NewUserRecord, User } from "./types";
+import type { NewUserRecord, User, UserWithPassword } from "./types";
 import { DatabaseError } from "pg";
 import { databasePool } from "../../configs/database.config";
 import { appError } from "../../middlewares/errorHandler.middleware";
@@ -42,4 +42,14 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
     [email],
   );
   return result.rows[0] || null;
+};
+
+export const findUserWithPasswordByEmail = async (
+  email: string,
+): Promise<UserWithPassword | null> => {
+  const result = await databasePool.query<UserWithPassword>(
+    `SELECT id, name, email, password_hash AS "passwordHash" FROM users WHERE email = $1`,
+    [email],
+  );
+  return result.rows[0] ?? null;
 };

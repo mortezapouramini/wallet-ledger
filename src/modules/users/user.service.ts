@@ -8,7 +8,12 @@ import type {
   VerifyEmailInput,
 } from "./types";
 import argon2 from "argon2";
-import { createAccount, createUser, findUserByEmail } from "./user.repository";
+import {
+  createAccount,
+  createUser,
+  findUserByEmail,
+  findUserWithPasswordByEmail,
+} from "./user.repository";
 import { withTransaction } from "../../configs/database.config";
 import { appError } from "../../middlewares/errorHandler.middleware";
 import { redis } from "../../configs/redis.config";
@@ -94,18 +99,15 @@ const dummyHash = argon2.hash(crypto.randomBytes(16).toString("hex"));
 export const loginUserService = async (
   userData: LoginInput,
 ): Promise<UserWithToken> => {
-  const user = await findUserByEmail(userData.email);
-  if (!user) {
+  const row = await findUserWithPasswordByEmail(userData.email);
+  if (!row) {
     await argon2.verify(await dummyHash, userData.password); // Prevent timing attacks
     throw appError("Invalid email or password", 401);
   }
+  const { passwordHash, ...user } = row;
 
-  const isValidPassword = await argon2.verify(
-    user.passwordHash as string,
-    userData.password,
-  );
+  const isValidPassword = await argon2.verify(passwordHash, userData.password);
   if (!isValidPassword) throw appError("Invalid email or password", 401);
-  delete user.passwordHash;
   const accessToken = signAccessToken({ id: user.id, email: user.email });
   return { user, accessToken };
 };

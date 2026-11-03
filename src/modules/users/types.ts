@@ -16,11 +16,13 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  passwordHash?: string;
+}
+export interface UserWithPassword extends User {
+  passwordHash: string;
 }
 export type AccessToken = string;
 export type UserWithToken = {
-  user: Omit<User , "passwordHash">;
+  user : User;
   accessToken: AccessToken;
 };
 export type RegisterInput = z.infer<typeof registerUserSchema>;
