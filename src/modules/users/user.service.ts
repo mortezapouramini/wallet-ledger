@@ -1,18 +1,26 @@
 import type {
+  AccessToken,
+  LoginInput,
   PendingUserRecord,
   RegisterInput,
   User,
+  UserWithToken,
   VerifyEmailInput,
 } from "./types";
 import argon2 from "argon2";
-import { createAccount, createUser, findUserByEmail } from "./user.repository";
+import {
+  createAccount,
+  createUser,
+  findUserByEmail,
+  findUserWithPasswordByEmail,
+} from "./user.repository";
 import { withTransaction } from "../../configs/database.config";
 import { appError } from "../../middlewares/errorHandler.middleware";
 import { redis } from "../../configs/redis.config";
 import crypto from "crypto";
 import { pendingUserSchema } from "./user.schema";
 import { emailQueue } from "../../queues/email.queue";
-
+import { signAccessToken } from "../../shared/auth.shared";
 
 const PENDING_TTL_SECONDS = 15 * 60;
 const SEND_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -58,8 +66,8 @@ export const registerUserService = async (
   try {
     await emailQueue.add("verify-email", { email: userData.email, link });
   } catch (error) {
-    await redis.del(key)
-    throw error
+    await redis.del(key);
+    throw error;
   }
 };
 
@@ -84,4 +92,22 @@ export const verifyEmailService = async (
     await createAccount(client, user.id);
     return user;
   });
+};
+
+const dummyHash = argon2.hash(crypto.randomBytes(16).toString("hex"));
+
+export const loginUserService = async (
+  userData: LoginInput,
+): Promise<UserWithToken> => {
+  const row = await findUserWithPasswordByEmail(userData.email);
+  if (!row) {
+    await argon2.verify(await dummyHash, userData.password); // Prevent timing attacks
+    throw appError("Invalid email or password", 401);
+  }
+  const { passwordHash, ...user } = row;
+
+  const isValidPassword = await argon2.verify(passwordHash, userData.password);
+  if (!isValidPassword) throw appError("Invalid email or password", 401);
+  const accessToken = signAccessToken({ id: user.id, email: user.email });
+  return { user, accessToken };
 };
