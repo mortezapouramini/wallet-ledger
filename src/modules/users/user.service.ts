@@ -108,6 +108,6 @@ export const loginUserService = async (
 
   const isValidPassword = await argon2.verify(passwordHash, userData.password);
   if (!isValidPassword) throw appError("Invalid email or password", 401);
-  const accessToken = signAccessToken({ id: user.id, email: user.email });
+  const accessToken = signAccessToken({ id: user.id});
   return { user, accessToken };
 };

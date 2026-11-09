@@ -5,7 +5,6 @@ import { AccessToken } from "../modules/users/types";
 
 type JwtPayload = {
   id: string;
-  email: string;
 };
 
 export const signAccessToken = (data: JwtPayload): AccessToken =>

@@ -1,5 +1,5 @@
 import type { Response } from "express";
-import type { SuccessResponse } from "../types";
+import type { SuccessResponse } from "../types/response.types";
 
 export function sendSuccess<T>(
   res: Response<SuccessResponse<T>>,

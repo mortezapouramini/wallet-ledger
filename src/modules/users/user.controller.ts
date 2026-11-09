@@ -10,7 +10,7 @@ import {
   registerUserService,
   verifyEmailService,
 } from "./user.service";
-import { SuccessResponse } from "../../types/index";
+import { SuccessResponse } from "../../types/response.types";
 import { sendSuccess } from "../../shared/respond.shared";
 import { setAuthCookie, signAccessToken } from "../../shared/auth.shared";
 
@@ -27,7 +27,7 @@ export const verifyEmail = async (
   res: Response<SuccessResponse<User>>,
 ) => {
   const newUser = await verifyEmailService(req.body);
-  setAuthCookie(res, signAccessToken({ id: newUser.id, email: newUser.email }));
+  setAuthCookie(res, signAccessToken({ id: newUser.id }));
   sendSuccess(res, newUser, 201);
 };
 

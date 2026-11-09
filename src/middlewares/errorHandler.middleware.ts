@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ErrorResponse } from "../types/index";
+import { ErrorResponse } from "../types/response.types";
 
 interface BodyParserError extends Error {
   status: number;
