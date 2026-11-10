@@ -28,11 +28,11 @@ export const verifyAccessToken = (
 
     next();
   } catch (error) {
-    if (error instanceof JsonWebTokenError) {
-      return next(appError("Invalid token", 401));
-    }
     if (error instanceof TokenExpiredError) {
       return next(appError("Token expired", 401));
+    }
+    if (error instanceof JsonWebTokenError) {
+      return next(appError("Invalid token", 401));
     }
   }
 };
